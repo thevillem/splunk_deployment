@@ -9,6 +9,11 @@ data "local_file" "public_ip" {
   filename = "${path.module}/public_ip.txt"
 }
 
+variable "splunk_ssh_key" {
+  description = "Path to the Splunk SSH key"
+  default = "./splunk_hosts.pem"
+}
+
 variable "vpc_cidr" {
   description = "CIDR for the Splunk VPC"
   default = "192.168.0.0/16"
@@ -148,9 +153,27 @@ resource "aws_instance" "splunk_indexer" {
   subnet_id = "${aws_subnet.splunk-subnet.id}"
   vpc_security_group_ids = ["${aws_security_group.sgsplunk.id}"]
   associate_public_ip_address = true
+  private_ip = "192.168.1.100"
 
   tags {
     Name = "splunk-indxr"
+  }
+
+    provisioner "remote-exec" {
+    inline = [
+      "sudo yum update -y",
+      "cd /var/tmp/",
+      "curl -O https://s3.amazonaws.com/splunk-class-uf/splunk-7.2.3-06d57c595b80-Linux-x86_64.tgz",
+      "curl -O https://s3.amazonaws.com/splunk-class-uf/indxr-conf.tgz",
+      "curl -O https://s3.amazonaws.com/splunk-class-uf/indxr_install.sh"
+    ]
+
+    connection {
+      type = "ssh"
+      user = "ec2-user"
+      private_key = "${file("./splunk_hosts.pem")}"
+    }
+
   }
 
   provisioner "local-exec" {
@@ -168,6 +191,21 @@ resource "aws_instance" "splunk_f1" {
 
   tags {
     Name = "splunk-f1"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo yum update -y",
+      "cd /var/tmp/",
+      "curl -O https://s3.amazonaws.com/splunk-class-uf/splunkforwarder-7.2.3-06d57c595b80-Linux-x86_64.tgz",
+      "curl -O https://s3.amazonaws.com/splunk-class-uf/uf-install.sh"
+    ]
+
+    connection {
+      type = "ssh"
+      user = "ec2-user"
+      private_key = "${file("./splunk_hosts.pem")}"
+    }
   }
 
   provisioner "local-exec" {
