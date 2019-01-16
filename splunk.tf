@@ -30,7 +30,7 @@ resource "aws_vpc" "splunk-vpc" {
   enable_dns_hostnames = true
 
   tags {
-    Name = "splunk-vpc"
+    Name = "splunk-class-vpc"
   }
 }
 
@@ -54,7 +54,6 @@ resource "aws_subnet" "splunk-subnet" {
   }
 }
 
-
 # Define the route table
 resource "aws_route_table" "splunk-rt" {
   vpc_id = "${aws_vpc.splunk-vpc.id}"
@@ -70,76 +69,64 @@ resource "aws_route_table" "splunk-rt" {
 }
 
 # Assign the route table to the public Subnet
-resource "aws_route_table_association" "web-public-rt" {
+resource "aws_route_table_association" "splunk-public-rt" {
   subnet_id = "${aws_subnet.splunk-subnet.id}"
   route_table_id = "${aws_route_table.splunk-rt.id}"
 }
 
 # Define the security group for splunk subnets
 resource "aws_security_group" "sgsplunk" {
-  name = "Splunk_Web Subnet"
+  name = "Splunk Security Group"
   description = "Allow incoming HTTP connections & SSH access"
-
-  ingress {
-    from_port = 8080
-    to_port = 8080
-    protocol = "tcp"
-    cidr_blocks = ["${data.local_file.public_ip.content}/32"]
-  }
-
-  ingress {
-    from_port = 22
-    to_port = 22
-    protocol = "tcp"
-    cidr_blocks =  ["${data.local_file.public_ip.content}/32"]
-  }
-
-  egress {
-    from_port       = 0
-    to_port         = 0
-    protocol        = "-1"
-    cidr_blocks     = ["0.0.0.0/0"]
-  }
 
   vpc_id="${aws_vpc.splunk-vpc.id}"
 
   tags {
-    Name = "Splunk_Web_and_SSH SG"
+    Name = "Splunk SG"
   }
 }
 
-resource "aws_security_group_rule" "allow_sg_tcp_traffic_in" {
-  from_port = 0
+resource "aws_security_group_rule" "allow_ssh_traffic_in" {
+  from_port = 22
   protocol = "tcp"
   security_group_id = "${aws_security_group.sgsplunk.id}"
-  self = true
+  cidr_blocks = ["${data.local_file.public_ip.content}/32"]
+  to_port = 22
+  type = "ingress"
+}
+
+resource "aws_security_group_rule" "allow_http_traffic_in" {
+  from_port = 8080
+  protocol = "tcp"
+  security_group_id = "${aws_security_group.sgsplunk.id}"
+  cidr_blocks = ["${data.local_file.public_ip.content}/32"]
+  to_port = 8080
+  type = "ingress"
+}
+
+resource "aws_security_group_rule" "allow_internal_sg_traffic_in" {
+  from_port = 0
+  protocol = "-1"
+  security_group_id = "${aws_security_group.sgsplunk.id}"
+  source_security_group_id = "${aws_security_group.sgsplunk.id}"
   to_port = 0
   type = "ingress"
 }
 
-resource "aws_security_group_rule" "allow_sg_udp_traffic_in" {
+resource "aws_security_group_rule" "allow_internal_sg_traffic_out" {
   from_port = 0
-  protocol = "udp"
+  protocol = "-1"
   security_group_id = "${aws_security_group.sgsplunk.id}"
-  self = true
-  to_port = 0
-  type = "ingress"
-}
-
-resource "aws_security_group_rule" "allow_sg_tcp_traffic_out" {
-  from_port = 0
-  protocol = "tcp"
-  security_group_id = "${aws_security_group.sgsplunk.id}"
-  self = true
+  source_security_group_id = "${aws_security_group.sgsplunk.id}"
   to_port = 0
   type = "egress"
 }
 
-resource "aws_security_group_rule" "allow_sg_udp_traffic_out" {
+resource "aws_security_group_rule" "allow_all_out" {
   from_port = 0
-  protocol = "udp"
+  protocol = "-1"
   security_group_id = "${aws_security_group.sgsplunk.id}"
-  self = true
+  cidr_blocks = ["0.0.0.0/0"]
   to_port = 0
   type = "egress"
 }
@@ -153,7 +140,6 @@ resource "aws_instance" "splunk_indexer" {
   subnet_id = "${aws_subnet.splunk-subnet.id}"
   vpc_security_group_ids = ["${aws_security_group.sgsplunk.id}"]
   associate_public_ip_address = true
-  private_ip = "192.168.1.100"
 
   tags {
     Name = "splunk-indxr"
