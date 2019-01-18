@@ -1,27 +1,26 @@
 ### Splunk Deployment Class
 
-#### Installation
+#### Indexer Installation
 
 The Splunk installation has been automated for you in order to focus on the deployment configuration.
 
 To perform the install:
 
-1. Navigate to the `/var/tmp` directory
-
+1. Navigate to the `/var/tmp` directory  
     `cd /var/tmp/`
     
-2. Change the permisson of the installation script
-    1. On the indexer: `chmod +x indxr_install.sh`
-    2. On the forwarder: `chmod +x uf_install.sh`
+2. Change the permisson of the installation script  
+    `chmod +x indxr_install.sh`
     
-3. Finally execute the script
-    1. On the indexer: `./indxr_install.sh`
-    2. On the forwarder: `./uf_install.sh`
+    
+3. Finally execute the script  
+    `./indxr_install.sh`
+    
     
 If the installation is successful you'll see a success message. If it's not, then navigate to the following folder;
 
- 1. On the indexer: `cd /var/tmp/indxr-install`
- 2. On the forwarder: `cd /var/tmp/uf-install`
+`cd /var/tmp/indxr-install`
+
  
  And look at the log files there, if you need help please raise your hand.
 
@@ -84,7 +83,7 @@ With the deployment app installed, we now need to tell Splunk to deploy it to ho
     
 This tells Splunk to deploy our app `Splunk_TA_nix` to hosts that are either 32-bit or 64-bit Linux hosts.
 
-##### Final Steps
+##### Indexer - Final Steps
 
 Now that the indexer is configured the way we want it, we'll want to verify our configuration.
 
@@ -100,3 +99,85 @@ Now that the indexer is configured the way we want it, we'll want to verify our 
 
     `./splunk restart`
 
+
+#### Forwarder Installation
+
+The forwarder installation has been automated for you in order to focus on the deployment configuration.
+
+To perform the install:
+
+1. Navigate to the `/var/tmp` directory  
+    `cd /var/tmp/`
+    
+2. Change the permisson of the installation script  
+    `chmod +x uf_install.sh`
+    
+3. Finally execute the script  
+    `./uf_install.sh`
+    
+If the installation is successful you'll see a success message. If it's not, then navigate to the following folder;
+
+ `cd /var/tmp/uf-install`
+ 
+ And look at the log files there, if you need help please raise your hand.
+ 
+ #### Forwarder Configuration
+ 
+ We want to be able to send our logs from this host to our configured indexer.
+ 
+ In order to do this, we need to create the `outputs.conf` file.
+ 
+1. Change your directory.
+ 
+    `cd /opt/splunkforwarder/etc/system/local`
+    
+2. Create the `outputs.conf` file.
+ 
+    `nano outputs.conf`
+    
+3. Now we need to add our configuration.
+ 
+ 
+    [tcpout]
+    defaultGroup=indexers
+
+    [tcpout:indexers]
+    server=<ip-of-your-indexer>:9997
+    
+With the outputs.conf file, the forwarder will now send the log that it gathers to our indexer.
+
+The problem we face now is, outside of the internal Splunk logs, our forwarder doesn't send anything else.
+
+We need to tell our forwarder to get apps from our deployment-server, that way we can start getting more information about our system.
+
+1. Create the file `deploymentclient.conf`
+
+    `nano deploymentclient.conf`
+    
+2. Fill in our configuration
+
+
+    [deployment-client]
+    
+    [target-broker:deploymentServer]
+    targetUri = <ip-of-your-indexer>:8089
+    
+With the deployment client file setup, our forwarder will now check our deployment server for any apps it needs.
+
+##### Forwarder - Final Steps
+
+Now that the forwarder is configured the way we want it, we'll want to verify our configuration.
+
+1. Change to the `splunk\bin` directory
+
+     `cd /opt/splunkforwarder/bin/`
+     
+2. Run Splunk btool, which checks our configs for any issues
+
+    `./splunk btool check --debug`
+    
+3. If there are any issues, please raise your hand and let a helper know. If there are no issues, then reload Splunk.
+
+    `./splunk restart`
+    
+ 
