@@ -4,7 +4,7 @@
 
 Linux Systems && OS X:
  
-    host myip.opendns.com resolver1.opendns.com | grep -P '\d{1,3}(\.\d{1,3}){3}$' | cut -d' ' -f4 | tr -d '\n' > public_ip.txt
+    host myip.opendns.com resolver1.opendns.com | grep -E '\d{1,3}(\.\d{1,3}){3}$' | cut -d' ' -f4 | tr -d '\n' > public_ip.txt
     
 For Windows, you'll need to run the `my_ip.ps1` Powershell Script.
 
