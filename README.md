@@ -21,7 +21,9 @@ Linux Systems && OS X:
  
     host myip.opendns.com resolver1.opendns.com | grep -E '\d{1,3}(\.\d{1,3}){3}$' | cut -d' ' -f4 | tr -d '\n' > public_ip.txt
     
-For Windows, you'll need to run the `my_ip.ps1` Powershell Script.
+For Windows, you'll need to run the following;
+
+ `copy con: public_ip.txt`
 
 After running one of the above commands, you should have a file called public_ip.txt. If you don't, raise your hand.
 
