@@ -1,10 +1,19 @@
 ### Splunk Deployment Class
 
-#### Create a .aws file
+#### Create a .aws folder
 
- `dir "%UserProfile%"`
+Windows:
+
+ `cd "%UserProfile%"`
 
  `mkdir .aws`
+
+OS X && Linux:
+
+ `cd ~`
+ 
+ `mkdir .aws`
+
 
 #### Get Your Public IP
 
