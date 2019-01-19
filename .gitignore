@@ -147,3 +147,5 @@ dmypy.json
 
 # Ignore local IDE files
 .idea/
+
+*.pem

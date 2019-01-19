@@ -24,6 +24,10 @@ variable "splunk_subnet_cidr" {
   default = "192.168.1.0/24"
 }
 
+variable "count" {
+  default=2
+}
+
 # Define our VPC
 resource "aws_vpc" "splunk-vpc" {
   cidr_block = "${var.vpc_cidr}"
@@ -147,6 +151,7 @@ resource "aws_instance" "splunk_indexer" {
 
     provisioner "remote-exec" {
     inline = [
+      "sudo echo splunk-indxr.ec2.internal > /etc/hostname",
       "sudo yum update -y",
       "cd /var/tmp/",
       "curl -O https://s3.amazonaws.com/splunk-class-uf/splunk-7.2.3-06d57c595b80-Linux-x86_64.tgz",
@@ -167,20 +172,23 @@ resource "aws_instance" "splunk_indexer" {
   }
 }
 
-resource "aws_instance" "splunk_f1" {
+resource "aws_instance" "splunk_fwdr" {
   ami           = "ami-009d6802948d06e52"
   instance_type = "t2.micro"
   key_name = "splunk_hosts"
   subnet_id = "${aws_subnet.splunk-subnet.id}"
   vpc_security_group_ids = ["${aws_security_group.sgsplunk.id}"]
   associate_public_ip_address = true
+  count = "${var.count}"
+
 
   tags {
-    Name = "splunk-f1"
+    Name = "${format("splunk-fwdr-%01d", count.index + 1)}"
   }
 
   provisioner "remote-exec" {
     inline = [
+      "sudo echo ${format("splunk-fwdr-%01d.ec2.internal", count.index + 1)} > /etc/hostname",
       "sudo yum update -y",
       "cd /var/tmp/",
       "curl -O https://s3.amazonaws.com/splunk-class-uf/splunkforwarder-7.2.3-06d57c595b80-Linux-x86_64.tgz",
@@ -195,6 +203,6 @@ resource "aws_instance" "splunk_f1" {
   }
 
   provisioner "local-exec" {
-    command = "echo ${aws_instance.splunk_f1.public_ip} >> splunk_forwarder_ip_address.txt"
+    command = "echo ${self.public_ip} >> splunk_forwarder_ip_addresses.txt"
   }
 }

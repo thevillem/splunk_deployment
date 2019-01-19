@@ -1,5 +1,19 @@
 ### Splunk Deployment Class
 
+#### Get Your Public IP
+
+Linux Systems && OS X:
+ 
+    host myip.opendns.com resolver1.opendns.com | grep -P '\d{1,3}(\.\d{1,3}){3}$' | cut -d' ' -f4 | tr -d '\n' > public_ip.txt
+    
+For Windows, you'll need to run the `my_ip.ps1` Powershell Script.
+
+After running one of the above commands, you should have a file called public_ip.txt. If you don't, raise your hand.
+
+#### Creating a SSH Key
+
+Please follow along with me as I walk you through the AWS console to create a SSH public and private key pair.
+
 #### Indexer Installation
 
 The Splunk installation has been automated for you in order to focus on the deployment configuration.
